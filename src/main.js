@@ -1,3 +1,4 @@
+let isDebug = true;
 let config = {
   type: Phaser.Auto,
   width: 800,
@@ -5,7 +6,7 @@ let config = {
   physics: {
     default: 'matter',
     matter: {
-      debug: false,
+      debug: isDebug,
       gravity: { x: 0, y: 0 },
     }
   },
@@ -19,6 +20,7 @@ let varioText = null;
 let speed = new Phaser.Math.Vector2(0, 0);
 let altitude = 1000;
 let vario = 0;
+let varioSound = new Vario();
 let thermal = null;
 let circle = null;
 let circles = [];
@@ -51,15 +53,17 @@ function create() {
   glider.setVelocity(speed.x, speed.y);
   glider.setBounce(1, 1);
 
-  for (i = 0; i < nPoints; ++i) {
-    circles[i] = this.matter.add.image(0, 0, undefined, null, { isStatic: true, collisionFilter: { mask: `ignore${i}` } });
-    circles[i].setCircle(1);
+  if (isDebug) {
+    for (i = 0; i < nPoints; ++i) {
+      circles[i] = this.matter.add.image(0, 0, undefined, null, { isStatic: true, collisionFilter: { mask: `ignore${i}` } });
+      circles[i].setCircle(1);
+    }
   }
 
   this.matter.world.on('collisionstart', function (event, bodyA, bodyB) {
-      // FIXME: Need to check if this is a glider : thermal colision
-      // Can probably use a colision category for that!
-        event.pairs.forEach( (p) => p.isActive = false)
+    // FIXME: Need to check if this is a glider : thermal colision
+    // Can probably use a colision category for that!
+    event.pairs.forEach( (p) => p.isActive = false)
   });
   //this.matter.add.overlap(glider, thermal, () => { altitude++ }, null, this);
 }
@@ -85,12 +89,16 @@ function gridForRectangle(cx, cy, angle, width, height) {
       px = topLeftX - sinDeg(angle) * y * vDist - sinDeg(angle - 90) * x * hDist;
       py = topLeftY + cosDeg(angle) * y * vDist + cosDeg(angle - 90) * x * hDist;
 
-      circles[i].setX(px)
-      circles[i].setY(py)
+      if (isDebug) {
+        circles[i].setX(px)
+        circles[i].setY(py)
+      }
       if (((px - tx)**2 + (py - ty)**2) < tr**2) {
         count = count + 1;
-        circles[i].setCircle(10);
-      } else {
+        if (isDebug) {
+          circles[i].setCircle(10);
+        }
+      } else if (isDebug) {
         circles[i].setCircle(1);
       }
       ++i
@@ -138,5 +146,6 @@ function update() {
   glider.setVelocity(speed.x, speed.y);
 
   altText.setText( `${Math.round(altitude)}m`);
+  varioSound.update(inThermalPercent*6);
   varioText.setText( `${Math.round(inThermalPercent*6)}m/s`);
 }
